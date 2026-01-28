@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hello World · System Stats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #0f0f14 0%, #1a1a24 50%, #14141c 100%);
+      color: #e4e4e7;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #a5f3fc 0%, #67e8f9 50%, #22d3ee 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      color: #71717a;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .stat-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(96, 165, 250, 0.2);
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #71717a;
+      margin-bottom: 0.35rem;
+    }
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #fafafa;
+    }
+    .stat-value.highlight {
+      color: #67e8f9;
+    }
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #a1a1aa;
+      margin: 1.5rem 0 0.75rem;
+      padding-bottom: 0.25rem;
+    }
+    .load-avg {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .load-avg span {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .memory-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    .memory-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22d3ee, #06b6d4);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .footer {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: #52525b;
+    }
+    .error {
+      color: #f87171;
+      padding: 1rem;
+      background: rgba(248, 113, 113, 0.1);
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+    .loading {
+      color: #71717a;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hello World</h1>
+    <p class="subtitle">Node.js app with live system stats</p>
+
+    <div class="section-title">System overview</div>
+    <div class="stats-grid" id="stats-grid">
+      <div class="loading">Loading…</div>
+    </div>
+
+    <div class="section-title">Memory usage</div>
+    <div class="stat-card">
+      <div class="stat-label">Usage</div>
+      <div class="stat-value" id="mem-percent">—</div>
+      <div class="memory-bar">
+        <div class="memory-bar-fill" id="mem-bar" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Load average (1m, 5m, 15m)</div>
+    <div class="load-avg" id="load-avg">—</div>
+
+    <div class="footer">Refreshes every 2 seconds · Node <span id="node-ver">—</span></div>
+  </div>
+
+  <script>
+    const grid = document.getElementById('stats-grid');
+    const memPercent = document.getElementById('mem-percent');
+    const memBar = document.getElementById('mem-bar');
+    const loadAvg = document.getElementById('load-avg');
+    const nodeVer = document.getElementById('node-ver');
+
+    function formatUptime(seconds) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      return `${h}h ${m}m`;
+    }
+
+    function renderStats(data) {
+      grid.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-label">Platform</div>
+          <div class="stat-value">${data.platform}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Architecture</div>
+          <div class="stat-value">${data.arch}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Hostname</div>
+          <div class="stat-value">${data.hostname}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Uptime</div>
+          <div class="stat-value highlight">${formatUptime(data.uptime)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">CPU cores</div>
+          <div class="stat-value">${data.cpus.count}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Memory used</div>
+          <div class="stat-value">${data.memory.used} MB</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Memory total</div>
+          <div class="stat-value">${data.memory.total} MB</div>
+        </div>
+      `;
+
+      memPercent.textContent = data.memory.usagePercent + '%';
+      memBar.style.width = data.memory.usagePercent + '%';
+
+      loadAvg.innerHTML = data.loadAverage
+        .map((v, i) => `<span>${v.toFixed(2)}</span>`)
+        .join('');
+
+      nodeVer.textContent = data.nodeVersion;
+    }
+
+    function fetchStats() {
+      fetch('/api/stats')
+        .then(res => res.json())
+        .then(renderStats)
+        .catch(() => {
+          grid.innerHTML = '<div class="error">Could not load system stats.</div>';
+        });
+    }
+
+    fetchStats();
+    setInterval(fetchStats, 2000);
+  </script>
+</body>
+</html>
